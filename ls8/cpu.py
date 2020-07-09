@@ -7,7 +7,17 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        # This emaulates having 256 individual bits
+        # Being utilized as RAM
+        self.ram = [0] * 256
+        # 8 general-purpose 8-bit numeric registers R0-R7.
+
+        # * R5 is reserved as the interrupt mask (IM)
+        # * R6 is reserved as the interrupt status (IS)
+        # * R7 is reserved as the stack pointer (SP)
+        self.reg = [0] * 8
+        # Program Counter
+        self.pc = 0
 
     def load(self):
         """Load a program into memory."""
@@ -40,6 +50,14 @@ class CPU:
         else:
             raise Exception("Unsupported ALU operation")
 
+    def ram_read(self, address: int):
+        print("Reading RAM")
+        return self.ram[address]
+
+    def ram_write(self, address: int, value):
+        print("Writing RAM")
+        self.ram[address] = value
+
     def trace(self):
         """
         Handy function to print out the CPU state. You might want to call this
@@ -62,4 +80,9 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        self.trace()
+
+if __name__ == "__main__":
+    cpu = CPU()
+
+    cpu.run()
