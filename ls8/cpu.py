@@ -22,6 +22,7 @@ class CPU:
         self.mdr = None
         # Program Counter
         self.pc = 0
+        self.ir = 0
 
     def load(self):
         """Load a program into memory."""
@@ -88,28 +89,38 @@ class CPU:
 
         print()
 
+    def ldi(self):
+        op_a = self.ram[self.pc + 1]
+        op_b = self.ram[self.pc + 2]
+        self.reg[op_a] = op_b
+        return f"LDI | ADDRESS: %02X | INST : %02X |" % (op_a, op_b)
+
+    def prn(self):
+        op_a = self.ram[self.ir + 1]
+        print(f"PRN | ADDRESS: %02X | INST : %02X |" % (op_a, self.reg[op_a]))
+        return self.reg[op_a]
+
+    def op_switch(self, code: str):
+        switcher = {
+            "0b10000010": self.ldi,
+            "0b1000111": self.prn,
+        }
+        func = switcher.get(code, lambda: "")
+        print(func())
+
     def run(self):
         """Run the CPU."""
         print("---RUNNING---")
-        # We need to iterate over all of the instructions in ram
-        ir_pointer = 0
+        self.ir = 0
         # Temporarily checking for ir+3 to avoid iob errors
-        while ir_pointer + 3 < len(self.ram):
-            ir = self.ram[ir_pointer]
-            op_a = self.ram[ir_pointer + 1]
-            op_b = self.ram[ir_pointer + 2]
+        while self.ir + 3 < len(self.ram):
+            ir = self.ram[self.ir]
             if bin(ir) == "0b1":
                 print("PROGRAM TERMINATING")
                 break
-            if bin(ir) == "0b10000010":
-                print(f"LDI | ADD: %02X | INST : %02X |" % (op_a, op_b), end='')
-                print()
-                self.reg[op_a] = op_b
-                if bin(self.ram[self.pc + 3]) == "0b1000111":
-                    print(f"PRN | ADD: %02X | INST : %02X |" % (op_a, self.reg[op_a]), end='')
-                    print()
-                    print(self.reg[op_a])
-            ir_pointer += 1
+            else:
+                self.op_switch(bin(ir))
+            self.ir += 1
 
 
 if __name__ == "__main__":
