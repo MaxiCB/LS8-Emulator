@@ -23,9 +23,18 @@ class CPU:
         # Program Counter
         self.pc = 0
         self.ir = 0
+        self.data_count = 0
 
     def load(self):
         """Load a program into memory."""
+
+        parsed = []
+        f = open('examples/mult.ls8', 'r')
+        f1 = f.readlines()
+        for f in f1:
+            if f[0] != "#" and not f.isspace():
+                test = f.split(' ', 1)[0]
+                parsed.append(int(test, 2))
 
         address = 0
 
@@ -41,7 +50,7 @@ class CPU:
             0b00000001,  # HLT
         ]
 
-        for instruction in program:
+        for instruction in parsed:
             self.ram[address] = instruction
             # print(f"ADD: %02X | DATA: %02X | " % (address, instruction), end='')
             # print("BIN: ", bin(instruction))
@@ -90,20 +99,33 @@ class CPU:
         print()
 
     def ldi(self):
-        op_a = self.ram[self.pc + 1]
-        op_b = self.ram[self.pc + 2]
+        self.data_count = 3
+        op_a = self.ram[self.ir + 1]
+        op_b = self.ram[self.ir + 2]
         self.reg[op_a] = op_b
-        return f"LDI | ADDRESS: %02X | INST : %02X |" % (op_a, op_b)
+        return f"LDI | ADDRESS: %02X | INST: %02X |" % (op_a, op_b)
 
     def prn(self):
         op_a = self.ram[self.ir + 1]
-        print(f"PRN | ADDRESS: %02X | INST : %02X |" % (op_a, self.reg[op_a]))
+        print(f"PRN | ADDRESS: %02X | INST: %02X |" % (op_a, self.reg[op_a]))
         return self.reg[op_a]
+
+    # This runs into an error
+    # HLT is parsed incorrectly
+    # Setting R1 mimics the HLT Opcode
+    # Needs addressing
+    def mul(self):
+        self.data_count = 3
+        op_a = self.ram[self.ir + 1]
+        op_b = self.ram[self.ir + 2]
+        self.reg[self.ir] = self.reg[op_a] * self.reg[op_b]
+        return f"MUL | ADDRESS: %02X & %02X | INST: %02X" % (op_a, op_b, self.reg[self.ir])
 
     def op_switch(self, code: str):
         switcher = {
             "0b10000010": self.ldi,
             "0b1000111": self.prn,
+            "0b10100010": self.mul,
         }
         func = switcher.get(code, lambda: "")
         print(func())
@@ -112,14 +134,15 @@ class CPU:
         """Run the CPU."""
         print("---RUNNING---")
         self.ir = 0
-        # Temporarily checking for ir+3 to avoid iob errors
         while self.ir + 3 < len(self.ram):
             ir = self.ram[self.ir]
-            if bin(ir) == "0b1":
+            if bin(ir) == "0b1" and self.data_count == 0:
                 print("PROGRAM TERMINATING")
                 break
             else:
                 self.op_switch(bin(ir))
+                if self.data_count > 0:
+                    self.data_count -= 1
             self.ir += 1
 
 
