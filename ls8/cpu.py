@@ -6,7 +6,7 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        # This emulates having 256 individual bits
+        # This emulates having 256 individual bytes
         # Being utilized as RAM
         self.ram = [0, 0, 0, 0, 0, 0, 0, 0] * 256
         # 8 general-purpose 8-bit numeric registers R0-R7.
@@ -33,15 +33,18 @@ class CPU:
         program = [
             # From print8.ls8
             0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
+            0b00000000,  # REGISTER ADDRESS
+            0b00001000,  # VALUE
             0b01000111,  # PRN R0
-            0b00000000,
+            0b00000000,  # REGISTER ADDRESS
             0b00000001,  # HLT
         ]
 
         for instruction in program:
             self.ram[address] = instruction
+            # print(f"ADD: %02X | DATA: %02X | " % (address, instruction), end='')
+            # print("BIN: ", bin(instruction))
+            # print()
             address += 1
 
     def alu(self, op, reg_a, reg_b):
@@ -54,9 +57,15 @@ class CPU:
             raise Exception("Unsupported ALU operation")
 
     def ram_read(self, address: int):
+        self.mar = address
+        self.mdr = self.ram[address]
+        # print(f"MAR: %02X | MDR: %02X" % (self.mar, self.mdr), end='')
+        # print()
         return self.ram[address]
 
     def ram_write(self, address: int, value):
+        self.mar = address
+        self.mdr = value
         self.ram[address] = value
 
     def trace(self):
@@ -81,10 +90,31 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        self.trace()
+        print("---RUNNING---")
+        # We need to iterate over all of the instructions in ram
+        ir_pointer = 0
+        # Temporarily checking for ir+3 to avoid iob errors
+        while ir_pointer + 3 < len(self.ram):
+            ir = self.ram[ir_pointer]
+            op_a = self.ram[ir_pointer + 1]
+            op_b = self.ram[ir_pointer + 2]
+            if bin(ir) == "0b1":
+                print("PROGRAM TERMINATING")
+                break
+            if bin(ir) == "0b10000010":
+                print(f"LDI | ADD: %02X | INST : %02X |" % (op_a, op_b), end='')
+                print()
+                self.reg[op_a] = op_b
+                if bin(self.ram[self.pc + 3]) == "0b1000111":
+                    print(f"PRN | ADD: %02X | INST : %02X |" % (op_a, self.reg[op_a]), end='')
+                    print()
+                    print(self.reg[op_a])
+            ir_pointer += 1
 
 
 if __name__ == "__main__":
     cpu = CPU()
 
+    cpu.load()
+    # cpu.trace()
     cpu.run()
