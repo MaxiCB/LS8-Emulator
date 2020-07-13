@@ -23,7 +23,7 @@ class CPU:
         # Program Counter
         self.pc = 0
         self.ir = 0
-        self.data_count = 0
+        self.iter = 0
 
     def load(self):
         """Load a program into memory."""
@@ -99,27 +99,27 @@ class CPU:
         print()
 
     def ldi(self):
-        self.data_count = 3
+        # LDI requires next 2 address's
         op_a = self.ram[self.ir + 1]
         op_b = self.ram[self.ir + 2]
         self.reg[op_a] = op_b
+        self.iter = 3
         return f"LDI | ADDRESS: %02X | INST: %02X |" % (op_a, op_b)
 
     def prn(self):
+        # PRN requires next address
+        self.iter = 2
         op_a = self.ram[self.ir + 1]
         print(f"PRN | ADDRESS: %02X | INST: %02X |" % (op_a, self.reg[op_a]))
         return self.reg[op_a]
 
-    # This runs into an error
-    # HLT is parsed incorrectly
-    # Setting R1 mimics the HLT Opcode
-    # Needs addressing
     def mul(self):
-        self.data_count = 3
-        op_a = self.ram[self.ir + 1]
-        op_b = self.ram[self.ir + 2]
-        self.reg[self.ir] = self.reg[op_a] * self.reg[op_b]
-        return f"MUL | ADDRESS: %02X & %02X | INST: %02X" % (op_a, op_b, self.reg[self.ir])
+        # MUL requires next 2 address's
+        self.iter = 3
+        op_a = self.reg[self.ram[self.ir + 1]]
+        op_b = self.reg[self.ram[self.ir + 2]]
+        self.reg[self.ram[self.ir + 1]] = op_a * op_b
+        return f"MUL | ADDRESS: %02X | INST: %02X |" % (self.ram[self.ir + 1], self.reg[self.ram[self.ir + 1]])
 
     def op_switch(self, code: str):
         switcher = {
@@ -133,16 +133,14 @@ class CPU:
     def run(self):
         """Run the CPU."""
         print("---RUNNING---")
-        self.ir = 0
-        while self.ir + 3 < len(self.ram):
+        while self.ir < len(self.ram):
             ir = self.ram[self.ir]
-            if bin(ir) == "0b1" and self.data_count == 0:
+            if bin(ir) == "0b1" and self.iter == 0:
                 print("PROGRAM TERMINATING")
                 break
             else:
                 self.op_switch(bin(ir))
-                if self.data_count > 0:
-                    self.data_count -= 1
+                self.iter -= 1
             self.ir += 1
 
 
