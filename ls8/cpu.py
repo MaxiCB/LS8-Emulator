@@ -23,13 +23,16 @@ class CPU:
         # Program Counter
         self.pc = 0
         self.ir = 0
+        # Instruction Iteration Pointer
         self.iter = 0
+        # Stack Pointer
+        self.sp = 255
 
     def load(self):
         """Load a program into memory."""
 
         parsed = []
-        f = open('examples/mult.ls8', 'r')
+        f = open('examples/stack.ls8', 'r')
         f1 = f.readlines()
         for f in f1:
             if f[0] != "#" and not f.isspace():
@@ -121,11 +124,30 @@ class CPU:
         self.reg[self.ram[self.ir + 1]] = op_a * op_b
         return f"MUL | ADDRESS: %02X | INST: %02X |" % (self.ram[self.ir + 1], self.reg[self.ram[self.ir + 1]])
 
+    def push(self):
+        # PUSH requires next address
+        self.iter = 2
+        op_a = self.reg[self.ram[self.ir + 1]]
+        self.ram[self.sp] = op_a
+        self.sp -= 1
+        return f"PUSH | ADDRESS: %02X | INST: %02X |" % (self.sp, op_a)
+
+    def pop(self):
+        # POP requires next address
+        # Copy value from address into given register
+        # Increment SP
+        self.iter = 2
+        self.reg[self.ram[self.ir + 1]] = self.ram[self.sp + 1]
+        self.sp += 1
+        return f"POP | ADDRESS: %02X | INST: %02X |" % (self.sp, self.ram[self.sp + 1])
+
     def op_switch(self, code: str):
         switcher = {
             "0b10000010": self.ldi,
             "0b1000111": self.prn,
             "0b10100010": self.mul,
+            "0b1000101": self.push,
+            "0b1000110": self.pop,
         }
         func = switcher.get(code, lambda: "")
         print(func())
