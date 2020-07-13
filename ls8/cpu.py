@@ -27,12 +27,14 @@ class CPU:
         self.iter = 0
         # Stack Pointer
         self.sp = 255
+        # CALL Instruction Pointer
+        self.call_cache = 0
 
     def load(self):
         """Load a program into memory."""
 
         parsed = []
-        f = open('examples/stack.ls8', 'r')
+        f = open('examples/call.ls8', 'r')
         f1 = f.readlines()
         for f in f1:
             if f[0] != "#" and not f.isspace():
@@ -57,7 +59,6 @@ class CPU:
             self.ram[address] = instruction
             # print(f"ADD: %02X | DATA: %02X | " % (address, instruction), end='')
             # print("BIN: ", bin(instruction))
-            # print()
             address += 1
 
     def alu(self, op, reg_a, reg_b):
@@ -73,7 +74,6 @@ class CPU:
         self.mar = address
         self.mdr = self.ram[address]
         # print(f"MAR: %02X | MDR: %02X" % (self.mar, self.mdr), end='')
-        # print()
         return self.ram[address]
 
     def ram_write(self, address: int, value):
@@ -124,6 +124,14 @@ class CPU:
         self.reg[self.ram[self.ir + 1]] = op_a * op_b
         return f"MUL | ADDRESS: %02X | INST: %02X |" % (self.ram[self.ir + 1], self.reg[self.ram[self.ir + 1]])
 
+    def add(self):
+        # ADD requires the next 2 address's
+        self.iter = 3
+        op_a = self.reg[self.ram[self.ir + 1]]
+        op_b = self.reg[self.ram[self.ir + 2]]
+        self.reg[self.ram[self.ir + 1]] = op_a + op_b
+        return f"ADD | ADDRESS: %02X | INST: %02X |" % (self.ram[self.ir + 1], op_a + op_b)
+
     def push(self):
         # PUSH requires next address
         self.iter = 2
@@ -134,20 +142,32 @@ class CPU:
 
     def pop(self):
         # POP requires next address
-        # Copy value from address into given register
-        # Increment SP
         self.iter = 2
         self.reg[self.ram[self.ir + 1]] = self.ram[self.sp + 1]
         self.sp += 1
         return f"POP | ADDRESS: %02X | INST: %02X |" % (self.sp, self.ram[self.sp + 1])
+
+    def call(self):
+        self.iter = 2
+        self.call_cache = self.ir + 1
+        op_a = self.reg[self.ram[self.ir + 1]]
+        self.ir = op_a - 1
+        return f"CALL | ADDRESS: %02X | INST: %02X |" % (self.ram[self.ir + 1], self.ram[0])
+
+    def ret(self):
+        self.ir = self.call_cache
+        return f"RET | ADDRESS: %02X | INST: %02X |" % (self.ram[self.ir + 1], self.ir)
 
     def op_switch(self, code: str):
         switcher = {
             "0b10000010": self.ldi,
             "0b1000111": self.prn,
             "0b10100010": self.mul,
+            "0b10100000": self.add,
             "0b1000101": self.push,
             "0b1000110": self.pop,
+            "0b1010000": self.call,
+            "0b10001": self.ret,
         }
         func = switcher.get(code, lambda: "")
         print(func())
@@ -157,7 +177,7 @@ class CPU:
         print("---RUNNING---")
         while self.ir < len(self.ram):
             ir = self.ram[self.ir]
-            if bin(ir) == "0b1" and self.iter == 0:
+            if bin(ir) == "0b1" and self.iter <= 0:
                 print("PROGRAM TERMINATING")
                 break
             else:
