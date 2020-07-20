@@ -36,7 +36,7 @@ class CPU:
         """Load a program into memory."""
 
         parsed = []
-        f = open('examples/cmp.ls8', 'r')
+        f = open('examples/sctest.ls8', 'r')
         f1 = f.readlines()
         for f in f1:
             if f[0] != "#" and not f.isspace():
@@ -176,6 +176,26 @@ class CPU:
         self.fl = [0, 0, 0, 0, 0, les, grt, eq]
         return f"CMP | OP_A: %02X | OP_B: %02X |" % (self.reg[self.ram[self.ir + 1]], self.reg[self.ram[self.ir + 2]])
 
+    def jmp(self):
+        self.iter = 2
+        op_a = self.reg[self.ram[self.ir + 1]]
+        self.ir = op_a - 1
+        return f"JMP | ADDRESS: %02X | " % (self.reg[self.ram[self.ir + 1]])
+
+    def jeq(self):
+        self.iter = 2
+        op_a = self.reg[self.ram[self.ir + 1]]
+        if self.fl == [0, 0, 0, 0, 0, 0, 0, 1]:
+            self.ir = op_a - 1
+        return f"JEQ | ADDRESS: %02X | " % (op_a)
+
+    def jne(self):
+        self.iter = 2
+        op_a = self.reg[self.ram[self.ir + 1]]
+        if self.fl == [0, 0, 0, 0, 0, 1, 0, 0]:
+            self.ir = op_a - 1
+        return f"JNE | ADDRESS: %02X | " % (op_a)
+
     def op_switch(self, code: str):
         switcher = {
             "0b10000010": self.ldi,
@@ -187,6 +207,9 @@ class CPU:
             "0b1010000": self.call,
             "0b10001": self.ret,
             "0b10100111": self.cmp,
+            "0b1010100": self.jmp,
+            "0b1010101": self.jeq,
+            "0b1010110": self.jne
         }
         func = switcher.get(code, lambda: "")
         print(func())
