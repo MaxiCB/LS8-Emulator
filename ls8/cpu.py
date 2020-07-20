@@ -23,6 +23,8 @@ class CPU:
         # Program Counter
         self.pc = 0
         self.ir = 0
+        # Flag Register
+        self.fl = [0, 0, 0, 0, 0, 0, 0, 0]
         # Instruction Iteration Pointer
         self.iter = 0
         # Stack Pointer
@@ -34,7 +36,7 @@ class CPU:
         """Load a program into memory."""
 
         parsed = []
-        f = open('examples/call.ls8', 'r')
+        f = open('examples/cmp.ls8', 'r')
         f1 = f.readlines()
         for f in f1:
             if f[0] != "#" and not f.isspace():
@@ -158,6 +160,22 @@ class CPU:
         self.ir = self.call_cache
         return f"RET | ADDRESS: %02X | INST: %02X |" % (self.ram[self.ir + 1], self.ir)
 
+    def cmp(self):
+        # Compare the values on two registers
+        # Uses the next two address's
+        self.iter = 3
+        eq, les, grt = 0, 0, 0
+        op_a = self.reg[self.ram[self.ir + 1]]
+        op_b = self.reg[self.ram[self.ir + 2]]
+        if op_a == op_b:
+            eq = 1
+        if op_a < op_b:
+            les = 1
+        if op_a > op_b:
+            grt = 1
+        self.fl = [0, 0, 0, 0, 0, les, grt, eq]
+        return f"CMP | OP_A: %02X | OP_B: %02X |" % (self.reg[self.ram[self.ir + 1]], self.reg[self.ram[self.ir + 2]])
+
     def op_switch(self, code: str):
         switcher = {
             "0b10000010": self.ldi,
@@ -168,6 +186,7 @@ class CPU:
             "0b1000110": self.pop,
             "0b1010000": self.call,
             "0b10001": self.ret,
+            "0b10100111": self.cmp,
         }
         func = switcher.get(code, lambda: "")
         print(func())
