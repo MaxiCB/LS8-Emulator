@@ -116,8 +116,8 @@ class CPU:
         # PRN requires next address
         self.iter = 2
         op_a = self.ram[self.ir + 1]
-        print(f"PRN | ADDRESS: %02X | INST: %02X |" % (op_a, self.reg[op_a]))
-        return self.reg[op_a]
+        print(self.reg[op_a])
+        return f"PRN | ADDRESS: %02X | INST: %02X |" % (op_a, self.reg[op_a])
 
     def mul(self):
         # MUL requires next 2 address's
@@ -211,7 +211,8 @@ class CPU:
             "0b1010110": self.jne
         }
         func = switcher.get(code, lambda: "")
-        print(func())
+        func()
+        # print(func())
 
     def run(self):
         """Run the CPU."""
