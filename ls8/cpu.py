@@ -1,4 +1,5 @@
 """CPU functionality."""
+import sys
 
 
 class CPU:
@@ -32,11 +33,11 @@ class CPU:
         # CALL Instruction Pointer
         self.call_cache = 0
 
-    def load(self):
+    def load(self, load_file: str = "print8"):
         """Load a program into memory."""
 
         parsed = []
-        f = open('examples/sctest.ls8', 'r')
+        f = open('examples/' + load_file + '.ls8', 'r')
         f1 = f.readlines()
         for f in f1:
             if f[0] != "#" and not f.isspace():
@@ -183,18 +184,16 @@ class CPU:
         return f"JMP | ADDRESS: %02X | " % (self.reg[self.ram[self.ir + 1]])
 
     def jeq(self):
-        self.iter = 2
         op_a = self.reg[self.ram[self.ir + 1]]
         if self.fl == [0, 0, 0, 0, 0, 0, 0, 1]:
             self.ir = op_a - 1
-        return f"JEQ | ADDRESS: %02X | " % (op_a)
+        return f"JEQ | ADDRESS: %02X | " % op_a
 
     def jne(self):
-        self.iter = 2
         op_a = self.reg[self.ram[self.ir + 1]]
         if self.fl == [0, 0, 0, 0, 0, 1, 0, 0]:
             self.ir = op_a - 1
-        return f"JNE | ADDRESS: %02X | " % (op_a)
+        return f"JNE | ADDRESS: %02X | " % op_a
 
     def op_switch(self, code: str):
         switcher = {
@@ -229,8 +228,7 @@ class CPU:
 
 
 if __name__ == "__main__":
+    file = input('File name: ')
     cpu = CPU()
-
-    cpu.load()
-    # cpu.trace()
+    cpu.load(file)
     cpu.run()
