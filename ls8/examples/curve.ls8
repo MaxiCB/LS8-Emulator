@@ -1,0 +1,5 @@
+# Print a curved histogram
+# Each subsequent line has two times the number of asterisks as the previous
+
+11111111 #HISTO
+00000001 # HLT

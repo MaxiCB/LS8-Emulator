@@ -9,7 +9,7 @@ class CPU:
         """Construct a new CPU."""
         # This emulates having 256 individual bytes
         # Being utilized as RAM
-        self.ram = [0, 0, 0, 0, 0, 0, 0, 0] * 256
+        self.ram = [0] * 256
         # 8 general-purpose 8-bit numeric registers R0-R7.
         # * R5 is reserved as the interrupt mask (IM)
         # * R6 is reserved as the interrupt status (IS)
@@ -66,10 +66,30 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
+        # AND
+        # OR
+        # XOR
+        # NOT
+        # SHL
+        # SHR
+        # MOD
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        # elif op == "SUB": etc
+        if op == "AND":
+            self.reg[reg_a] = self.reg[reg_a] & self.reg[reg_b]
+        if op == "OR":
+            self.reg[reg_a] = self.reg[reg_a] | self.reg[reg_b]
+        if op == "XOR":
+            self.reg[reg_a] = self.reg[reg_a] ^ self.reg[reg_b]
+        if op == "NOT":
+            self.reg[reg_a] = ~self.reg[reg_a]
+        if op == "SHL":
+            self.reg[reg_a] = self.reg[reg_a] << self.reg[reg_b]
+        if op == "SHR":
+            self.reg[reg_a] = ~self.reg[reg_a] >> self.reg[reg_b]
+        if op == "MOD":
+            self.reg[reg_a] = self.reg[reg_a] % self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -135,6 +155,12 @@ class CPU:
         self.reg[self.ram[self.ir + 1]] = op_a + op_b
         return f"ADD | ADDRESS: %02X | INST: %02X |" % (self.ram[self.ir + 1], op_a + op_b)
 
+    def histo(self):
+        out = "*"
+        for star in range(0, 6):
+            print(out)
+            out = out * 2
+
     def push(self):
         # PUSH requires next address
         self.iter = 2
@@ -148,7 +174,7 @@ class CPU:
         self.iter = 2
         self.reg[self.ram[self.ir + 1]] = self.ram[self.sp + 1]
         self.sp += 1
-        return f"POP | ADDRESS: %02X | INST: %02X |" % (self.sp, self.ram[self.sp + 1])
+        return f"POP | ADDRESS: %02X | INST: %02X |" % (self.sp, self.ram[self.sp])
 
     def call(self):
         self.iter = 2
@@ -195,6 +221,13 @@ class CPU:
             self.ir = op_a - 1
         return f"JNE | ADDRESS: %02X | " % op_a
 
+    def st(self):
+        self.iter = 2
+        op_a = self.reg[self.ram[self.ir + 1]]
+        op_b = self.reg[self.ram[self.ir + 2]]
+        self.reg[op_a] = op_b
+        return f"ST | ADDRESS: %02X | INST: %02X |" % (op_a, op_b)
+
     def op_switch(self, code: str):
         switcher = {
             "0b10000010": self.ldi,
@@ -208,7 +241,9 @@ class CPU:
             "0b10100111": self.cmp,
             "0b1010100": self.jmp,
             "0b1010101": self.jeq,
-            "0b1010110": self.jne
+            "0b1010110": self.jne,
+            "0b10000100": self.st,
+            "0b11111111": self.histo,
         }
         func = switcher.get(code, lambda: "")
         func()
